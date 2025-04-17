@@ -1,0 +1,1 @@
+apt install zip unzip jq net-tools btop -y

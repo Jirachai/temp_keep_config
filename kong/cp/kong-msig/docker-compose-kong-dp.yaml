@@ -1,0 +1,45 @@
+services:
+  kong-dp:
+    image: kong/kong-gateway:${KONG_GW_VERSION:-3.9}
+    container_name: kong-dp
+    hostname: kong-dp
+    volumes:
+      - ${PWD}/certs:/etc/kong/ssl
+      - ${PWD}/log/kong:/var/log/kong
+      - ${PWD}/license/license.json:/etc/kong/license.json
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 12s
+      timeout: 6s
+      retries: 3
+    restart: on-failure
+    command: kong start --vv
+    ports:
+      - "8443:8443/tcp"
+      - "8000:8000/tcp"
+      - "8101:8101/tcp"
+    environment:
+      TZ: Asia/Bangkok
+      KONG_PLUGINS: bundled
+      KONG_HEADERS: server_tokens, latency_tokens, X-Kong-Upstream-Status
+      KONG_ROLE: "data_plane"
+      KONG_CLUSTER_CERT: "/etc/kong/ssl/cluster.crt"
+      KONG_CLUSTER_CERT_KEY: "/etc/kong/ssl/cluster.key"
+      KONG_LUA_SSL_TRUSTED_CERTIFICATE: "/etc/kong/ssl/cluster.crt,system"
+      KONG_CLUSTER_CONTROL_PLANE: "192.168.1.102:8005"
+      KONG_CLUSTER_TELEMETRY_ENDPOINT: "192.168.1.102:8006"
+      KONG_PROXY_LISTEN: "0.0.0.0:8000, 0.0.0.0:8443 http2 ssl"
+      KONG_STREAM_LISTEN: "0.0.0.0:5555, 0.0.0.0:5556 ssl reuseport backlog=65536"
+      KONG_STATUS_LISTEN: "0.0.0.0:8101 ssl"
+      KONG_PROXY_URI: ${KONG_PROXY_URI:-http://localhost:8000}
+      KONG_PROXY_ACCESS_LOG: /var/log/kong/proxy_access.log
+      KONG_PROXY_ERROR_LOG: /var/log/kong/proxy_error.log
+      KONG_PROXY_STREAM_ACCESS_LOG: /var/log/kong/proxystream_access.log basic
+      KONG_PROXY_STREAM_ERROR_LOG: /var/log/kong/proxystream_error.log
+      KONG_DATABASE: "off"
+      KONG_ANONYMOUS_REPORTS: "on"
+      # KONG_SSL_CERT_KEY: "/etc/kong/ssl/server.key"
+      # KONG_SSL_CERT: "/etc/kong/ssl/server.crt"
+      KONG_NGINX_WORKER_PROCESSES: 1
+      KONG_LOG_LEVEL: "debug"
+      KONG_ALLOW_DEBUG_HEADER: "on"
