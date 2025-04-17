@@ -1,0 +1,17 @@
+services:
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter
+    restart: always
+    network_mode: host
+    container_name: postgres-exporter
+    environment:
+      - TZ=Asia/Bangkok
+      - DATA_SOURCE_URI=${KONG_PG_HOST:-10.141.27.81}:${KONG_PG_PORT:-5432}/${POSTGRES_DB:-kong}?sslmode=disable
+      - DATA_SOURCE_USER=${POSTGRES_USER:-kong}
+      - DATA_SOURCE_PASS=${POSTGRES_PASSWORD:-kong}
+    command:
+      - --config.file=/conf/postgres_exporter.yml
+    volumes:
+      - ./config/postgres_exporter.yml:/conf/postgres_exporter.yml
+    ports:
+      - 9187:9187

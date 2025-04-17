@@ -1,0 +1,21 @@
+services:
+
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:v1.8.2
+    restart: always
+    hostname: kong-database-uat
+    container_name: node-exporter
+    environment:
+      - TZ=Asia/Bangkok
+    network_mode: host
+    pid: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--web.listen-address=0.0.0.0:9100'
+    ports:
+      - 9100:9100
+
+
