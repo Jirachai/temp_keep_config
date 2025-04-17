@@ -1,0 +1,134 @@
+services:
+  kong_cp:
+    image: kong/kong-gateway:${KONG_GW_VERSION:-3.9}
+    container_name: kong-cp
+    network_mode: host  
+    hostname: kong-cp
+    user: ${KONG_USER:-root}
+    volumes:
+      - ./certs:/etc/kong/ssl
+      - ./log/kong:/var/log/kong
+      - ./license/license.json:/etc/kong/license.json
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 12s
+      timeout: 6s
+      retries: 3
+    restart: always
+    command: kong start --vv
+    ports:
+      - "8444-8447:8444-8447/tcp"
+      - "8001-8004:8001-8004/tcp"
+      - "8005-8006:8005-8006/tcp"
+      - "8100:8100/tcp"
+    environment:
+      TZ: Asia/Bangkok
+        #KONG_ROLE: control_plane
+        #KONG_CLUSTER_CERT: /etc/kong/ssl/cluster.crt
+        #KONG_CLUSTER_CERT_KEY: /etc/kong/ssl/cluster.key
+        #KONG_CLUSTER_DATA_PLANE_PURGE_DELAY: 600
+      KONG_ADMIN_GUI_FLAGS: '{"IMMUNITY_ENABLED":true}'
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001, 0.0.0.0:8444 http2 ssl"
+      KONG_ADMIN_GUI_LISTEN: "0.0.0.0:8002, 0.0.0.0:8445 http2 ssl"
+      KONG_PORTAL_GUI_LISTEN: "0.0.0.0:8003, 0.0.0.0:8446 http2 ssl"
+      KONG_PORTAL_API_LISTEN: "0.0.0.0:8004, 0.0.0.0:8447 http2 ssl"
+      KONG_STATUS_LISTEN: "0.0.0.0:8100"
+      KONG_PROXY_LISTEN: "off"
+        #KONG_CLUSTER_LISTEN: "0.0.0.0:8005"
+        #KONG_CLUSTER_TELEMETRY_LISTEN: "0.0.0.0:8006"
+      KONG_DATABASE: ${KONG_DATABASE:-postgres}
+      KONG_PG_HOST: "127.0.0.1"
+      KONG_PG_PORT: "5432"
+      KONG_PG_DATABASE: ${KONG_PG_DATABASE:-kong}
+      KONG_PG_USER: ${KONG_PG_USER:-kong}
+      KONG_PG_PASSWORD: ${KONG_PG_PASSWORD:-e66lVzWjJZxsWFP3xKZd1X1eazKzA0tM}
+        #KONG_PG_MAX_CONCURRENT_QUERIES: 5
+      KONG_PG_RO_HOST: "127.0.0.1"
+      KONG_PG_RO_PORT: "5432"
+      KONG_PG_RO_DATABASE: ${KONG_PG_DATABASE:-kong}
+      KONG_PG_RO_USER: ${KONG_PG_USER:-kong}
+      KONG_PG_RO_PASSWORD: ${KONG_PG_PASSWORD:-e66lVzWjJZxsWFP3xKZd1X1eazKzA0tM}
+
+      KONG_ADMIN_ACCESS_LOG: /var/log/kong/admin_access.log
+      KONG_ADMIN_ERROR_LOG: /var/log/kong/admin_error.log
+      KONG_ADMIN_GUI_ACCESS_LOG: /var/log/kong/admingui_access.log
+      KONG_ADMIN_GUI_ERROR_LOG: /var/log/kong/admingui_error.log
+      KONG_PORTAL_API_ACCESS_LOG: /var/log/kong/portalapi_access.log
+      KONG_PORTAL_API_ERROR_LOG: /var/log/kong/portalapi_error.log
+      KONG_PORTAL_GUI_ACCESS_LOG: /var/log/kong/portalgui_access.log
+      KONG_PORTAL_GUI_ERROR_LOG: /var/log/kong/portalgui_error.log
+      KONG_STATUS_ACCESS_LOG: /var/log/kong/status_access.log
+      KONG_STATUS_ERROR_LOG: /var/log/kong/status_error.log
+      KONG_AUDIT_LOG: "on"
+      # KONG_STATUS_SSL_CERT_KEY: "/etc/kong/ssl/server.key"
+      # KONG_STATUS_SSL_CERT: "/etc/kong/ssl/server.crt"
+      KONG_ANONYMOUS_REPORTS: "off"
+      KONG_ENFORCE_RBAC: "on"
+      # KONG_ADMIN_SSL_CERT_KEY: "/etc/kong/ssl/server.key"
+      # KONG_ADMIN_SSL_CERT: "/etc/kong/ssl/server.crt"
+      #KONG_ADMIN_GUI_URL: ${KONG_ADMIN_GUI_URL-http://10.141.27.60:8002}
+      KONG_ADMIN_GUI_URL: ${KONG_ADMIN_GUI_URL-https://apimgtst.msig-thai.com}
+        #KONG_ADMIN_API_URI: ${KONG_ADMIN_API_URI:-http://10.141.27.60:8001}
+      KONG_ADMIN_API_URI: ${KONG_ADMIN_API_URI:-http://10.141.27.60:8001}
+        #KONG_ADMIN_GUI_API_URL: ${KONG_ADMIN_GUI_API_URL:-http://10.141.27.60:8001}
+      KONG_ADMIN_GUI_API_URL: ${KONG_ADMIN_GUI_API_URL:-https://apiadmtst.msig-thai.com}
+      KONG_ADMIN_GUI_SSL_CERT_KEY: "/etc/kong/ssl/msig.key"
+      KONG_ADMIN_GUI_SSL_CERT: "/etc/kong/ssl/msig.crt"
+      KONG_PORTAL: "on"
+      KONG_PORTAL_GUI_PROTOCOL: "https"
+        #KONG_PORTAL_GUI_HOST: ${KONG_PORTAL_GUI_HOST:-10.141.27.60:8003}
+      KONG_PORTAL_GUI_HOST: ${KONG_PORTAL_GUI_HOST:-apidevpttst.msig-thai.com}
+      #KONG_PORTAL_GUI_HOST: ${KONG_PORTAL_GUI_HOST:-apidevpttst.msig-thai.com}
+      KONG_PORTAL_GUI_SSL_CERT_KEY: "/etc/kong/ssl/msig.key"
+      KONG_PORTAL_GUI_SSL_CERT: "/etc/kong/ssl/msig.crt"
+      #KONG_PORTAL_API_URL: ${KONG_PORTAL_API_URI:-http://10.141.27.60:8004}
+      #KONG_PORTAL_API_URL: ${KONG_PORTAL_API_URI:-https://10.141.27.60:8447}
+      KONG_PORTAL_API_URL: ${KONG_PORTAL_API_URI:-https://apipttst.msig-thai.com}
+        # KONG_PORTAL_API_SSL_CERT_KEY: "/etc/kong/ssl/server.key"
+        #KONG_PORTAL_API_SSL_CERT: "/etc/kong/ssl/server.crt"
+      KONG_PORTAL_AUTH: "basic-auth"
+      #KONG_PORTAL_SESSION_CONF: '{"cookie_name":"portal-session", "secret":"this_is_portal", "storage": "kong", "cookie_secure":true, "cookie_domain": ".strigo.io", "cookie_samesite":"off"}'
+      KONG_PORTAL_SESSION_CONF: '{"cookie_name":"$4m04$", "secret":"kong", "storage": "kong"}'
+      KONG_PORTAL_EMAIL_VERIFICATION: "off"
+      KONG_PORTAL_EMAILS_FROM: "IT_infra@th.msig-asia.com"
+      KONG_PORTAL_EMAILS_REPLY_TO: "IT_infra@th.msig-asia.com"
+      KONG_ADMIN_EMAILS_FROM: "IT_infra@th.msig-asia.com"
+      KONG_ADMIN_EMAILS_REPLY_TO: "IT_infra@th.msig-asia.com"
+      KONG_SMTP_MOCK: "off"
+      KONG_SMTP_HOST: "th-smtp.th.msig.com"
+      KONG_SMTP_PORT: "25"
+        #KONG_SMTP_HOST: "smtp.gmail.com"
+        #KONG_SMTP_PORT: "587"
+        #KONG_SMTP_STARTTLS: "on"
+        #KONG_SMTP_USERNAME: "kaensom99@gmail.com"
+        #KONG_SMTP_PASSWORD: "dyzxfgwuweqessyb"
+        #KONG_SMTP_TYPE: "plain"
+
+      KONG_ADMIN_EMAILS: "IT_infra@th.msig-asia.com"
+      KONG_PORTAL_SMTP_ADMIN_EMAILS: "IT_infra@th.msig-asia.com"
+        #KONG_SMTP_STARTTLS: "on"
+        #KONG_NGINX_WORKER_PROCESSES: 1
+      KONG_LUA_SSL_TRUSTED_CERTIFICATE: "/etc/kong/ssl/cluster.crt,system"
+      KONG_PORTAL_CORS_ORIGINs: "*"
+      KONG_LOG_LEVEL: "debug"
+      #KONG_ADMIN_GUI_SESSION_CONF: '{"cookie_name":"$4m04$","secret":"kong","storage":"kong"}'
+      #KONG_ADMIN_GUI_SESSION_CONF: '{"cookie_name":"04tm341","secret":"kong","storage":"kong"}'
+      KONG_ADMIN_GUI_SESSION_CONF: '{"secret":"secret","storage":"kong","cookie_secure":false}'
+      KONG_ADMIN_GUI_AUTH: basic-auth
+      KONG_PORTAL_AND_VITALS_KEY: "012c1719d0d4a19183255eab7b87b6e44ad764769e2514891f67a38772cafac7"
+      KONG_VITALS: "on"
+      KONG_VITALS_STRATEGY": "prometheus" 
+      KONG_VITALS_TSDB_ADDRESS": "10.141.27.60:9090"
+      KONG_NGINX_EVENTS_USE: epoll
+      KONG_NGINX_MAIN_WORKER_RLIMIT_NOFILE: 100000
+      KONG_NGINX_EVENTS_WORKER_CONNECTIONS: 100000
+      KONG_NGINX_HTTP_OPEN_FILE_CACHE: max=200000 inactive=20s
+      KONG_NGINX_HTTP_OPEN_FILE_CACHE_VALID: 30s
+      KONG_NGINX_HTTP_OPEN_FILE_CACHE_MIN_USES: 2
+      KONG_NGINX_HTTP_OPEN_FILE_CACHE_ERRORS: "on"
+      KONG_NGINX_HTTP_TCP_NODELAY: "on"
+      KONG_NGINX_HTTP_KEEPALIVE_REQUESTS: 100000
+      KONG_NGINX_HTTP_KEEPALIVE_TIMEOUT: 300
+      KONG_TRACING_INSTRUMENTATIONS: all
+      KONG_TRACING_SAMPLING_RATE: 1.0
+

@@ -1,0 +1,90 @@
+services:
+  grafana:
+    image: grafana/grafana:11.5.1
+    container_name: grafana
+    restart: always
+    environment:
+      - TZ=Asia/Bangkok
+      - GF_USERS_DEFAULT_THEME=dark
+      - GF_LOG_MODE=console
+      - GF_LOG_LEVEL=info
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor tempoServiceGraph
+        #  - GF_SERVER_ROOT_URL=https://
+    volumes:
+      - ./grafana_data:/var/lib/grafana
+      - ./config/grafana.ini:/etc/grafana/grafana.ini
+    ports:
+      - 3000:3000
+
+  prometheus:
+    image: prom/prometheus:v2.53.3
+    container_name: prometheus
+    restart: always
+    environment:
+      - TZ=Asia/Bangkok
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention=30d
+      - --web.enable-lifecycle
+      - --web.listen-address=0.0.0.0:9090
+      - --log.level=debug
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-remote-write-receiver
+      - --enable-feature=exemplar-storage
+      - --web.console.libraries=/usr/share/prometheus/console_libraries
+      - --web.console.templates=/usr/share/prometheus/consoles
+    volumes:
+      - ./config/prometheus.yaml:/etc/prometheus/prometheus.yml
+      - ./prometheus_data:/prometheus
+        # - ../prometheus-ecs-sd/tmp:/ecs
+    ports:
+      - 9090:9090
+
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:v1.8.2
+    restart: always
+    hostname: prod-observability
+    container_name: node-exporter
+    environment:
+      - TZ=Asia/Bangkok
+    # network_mode: host
+    pid: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--web.listen-address=0.0.0.0:9100'
+    ports:
+      - 9100:9100
+
+  tempo:
+    image: grafana/tempo:2.6.0
+    container_name: tempo
+    restart: always
+    environment:
+      - TZ=Asia/Bangkok
+    volumes:
+      - ./config/tempo.yml:/etc/tempo.yml
+      - ./tempo-data:/tmp/tempo  # mkdir -p tempo-data && chown -R 10001:10001 tempo-data
+    ports:
+      - "14268:14268"  # jaeger ingest
+      - "3200:3200"   # tempo
+      - "9095:9095" # tempo grpc
+      - "4317:4317"  # otlp grpc
+      - "4318:4318"  # otlp http
+      - "9411:9411"   # zipkin
+    command: [ "-config.file=/etc/tempo.yml" ]
+
+  uptime:
+    image: louislam/uptime-kuma:1.23.16
+    container_name: uptime
+    restart: always
+    environment:
+      - TZ=Asia/Bangkok
+    volumes:
+      - ./kuma_data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - 3001:3001
+
