@@ -1,0 +1,79 @@
+services:
+  kong-dp:
+    image: kong/kong-gateway:${KONG_GW_VERSION:-3.9}
+    container_name: kong-dp
+    network_mode: host
+    hostname: kong-dp
+    user: ${KONG_USER:-root}
+    volumes:
+      - ./certs:/etc/kong/ssl
+      - ./log/kong:/var/log/kong
+      - ./license/license.json:/etc/kong/license.json
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 12s
+      timeout: 6s
+      retries: 3
+    restart: always
+    command: kong start --vv
+    ports:
+      - "443:443/tcp"
+      - "8000:8000/tcp"
+      - "8101:8101/tcp"
+    environment:
+      TZ: Asia/Bangkok
+      KONG_HEADERS: "off"
+        #KONG_ROLE: "data_plane"
+        #KONG_CLUSTER_CERT: "/etc/kong/ssl/cluster.crt"
+        # KONG_CLUSTER_CERT_KEY: "/etc/kong/ssl/cluster.key"
+      KONG_LUA_SSL_TRUSTED_CERTIFICATE: "/etc/kong/ssl/cluster.crt,system"
+      KONG_UNTRUSTED_LUA_SANDBOX_REQUIRES: "cjson.safe,resty.http"
+        #KONG_CLUSTER_CONTROL_PLANE: "10.141.27.60:8005"
+        #KONG_CLUSTER_TELEMETRY_ENDPOINT: "10.141.27.60:8006"
+      KONG_PROXY_LISTEN: "0.0.0.0:8000, 0.0.0.0:443 http2 ssl reuseport backlog=65536"
+      KONG_STREAM_LISTEN: "0.0.0.0:5555, 0.0.0.0:5556 ssl reuseport backlog=65536"
+        #KONG_STATUS_LISTEN: "0.0.0.0:8101 ssl"
+      KONG_STATUS_LISTEN: "0.0.0.0:8101"
+      KONG_ADMIN_LISTEN: "off"
+        #KONG_PROXY_URI: ${KONG_PROXY_URI:-http://10.141.27.79:8000}
+      KONG_PROXY_ACCESS_LOG: "off"
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+        #KONG_PROXY_STREAM_ACCESS_LOG: /var/log/kong/proxystream_access.log basic
+        #KONG_PROXY_STREAM_ERROR_LOG: /var/log/kong/proxystream_error.log
+      KONG_DATABASE: ${KONG_DATABASE:-postgres}
+      KONG_PG_HOST: "10.141.27.81"
+      KONG_PG_PORT: "5432"
+      KONG_PG_DATABASE: ${KONG_PG_DATABASE:-kong}
+      KONG_PG_USER: ${KONG_PG_USER:-kong}
+      KONG_PG_PASSWORD: ${KONG_PG_PASSWORD:-kong}
+      KONG_PG_MAX_CONCURRENT_QUERIES: 5
+      KONG_ANONYMOUS_REPORTS: "off"
+      # KONG_SSL_CERT_KEY: "/etc/kong/ssl/server.key"
+      # KONG_SSL_CERT: "/etc/kong/ssl/server.crt"
+      #KONG_NGINX_WORKER_PROCESSES: 1
+      KONG_LOG_LEVEL: "debug"
+      KONG_ALLOW_DEBUG_HEADER: "on"
+      KONG_PORTAL_AND_VITALS_KEY: "012c1719d0d4a19183255eab7b87b6e44ad764769e2514891f67a38772cafac7"
+      KONG_VITALS: "on"
+      KONG_VITALS_STRATEGY": "prometheus"
+      KONG_VITALS_TSDB_ADDRESS": "10.141.27.60:9090"
+      KONG_NGINX_EVENTS_USE: epoll
+      KONG_NGINX_MAIN_WORKER_RLIMIT_NOFILE: 100000
+      KONG_NGINX_EVENTS_WORKER_CONNECTIONS: 100000
+      KONG_NGINX_HTTP_OPEN_FILE_CACHE: max=200000 inactive=20s
+      KONG_NGINX_HTTP_OPEN_FILE_CACHE_VALID: 30s
+      KONG_NGINX_HTTP_OPEN_FILE_CACHE_MIN_USES: 2
+      KONG_NGINX_HTTP_OPEN_FILE_CACHE_ERRORS: "on"
+      KONG_NGINX_HTTP_TCP_NODELAY: "on"
+      KONG_NGINX_HTTP_KEEPALIVE_REQUESTS: 100000
+      KONG_NGINX_HTTP_KEEPALIVE_TIMEOUT: 300
+      KONG_TRACING_INSTRUMENTATIONS: all
+      KONG_TRACING_SAMPLING_RATE: 1.0
+
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: 10.141.27.60:24224
+        tag: docker.kong
+        fluentd-async-connect: 'true'
+
