@@ -1,0 +1,10 @@
+auth_modules:
+  kong: # Set this to any name you want
+    type: userpass
+    userpass:
+      username: apiprddb
+      password: ze8k&bXP
+    options:
+      # options become key=value parameters of the DSN
+      sslmode: disable
+      database: awckong

@@ -1,0 +1,138 @@
+services:
+  grafana:
+    image: 982942821915.dkr.ecr.ap-southeast-1.amazonaws.com/grafana:11.2.0
+    container_name: grafana
+    restart: always
+    environment:
+      - TZ=Asia/Bangkok
+      - GF_USERS_DEFAULT_THEME=dark
+      - GF_LOG_MODE=console
+      - GF_LOG_LEVEL=info
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor tempoServiceGraph
+      - GF_SERVER_ROOT_URL=https://awc-grafana.assetworldcorp-th.com
+    volumes:
+      - ./grafana_data:/var/lib/grafana
+      - ./config/grafana.ini:/etc/grafana/grafana.ini
+    ports:
+      - 3000:3000
+
+  prometheus:
+    image: 982942821915.dkr.ecr.ap-southeast-1.amazonaws.com/prometheus:v.2.54.1
+    container_name: prometheus
+    restart: always
+    environment:
+      - TZ=Asia/Bangkok
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention=30d
+      - --web.enable-lifecycle
+      - --web.listen-address=0.0.0.0:9090
+      - --log.level=debug
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-remote-write-receiver
+      - --enable-feature=exemplar-storage
+      - --web.console.libraries=/usr/share/prometheus/console_libraries
+      - --web.console.templates=/usr/share/prometheus/consoles
+    volumes:
+      - ./config/prometheus.yaml:/etc/prometheus/prometheus.yml
+      - ./prometheus_data:/prometheus
+      - ../prometheus-ecs-sd/tmp:/ecs
+    ports:
+      - 9090:9090
+
+  node-exporter:
+    image: 982942821915.dkr.ecr.ap-southeast-1.amazonaws.com/awc-ecr-node-exporter:v.1.8.2
+    restart: always
+    hostname: prod-observability
+    container_name: node-exporter
+    environment:
+      - TZ=Asia/Bangkok
+    # network_mode: host
+    pid: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--web.listen-address=0.0.0.0:9100'
+    ports:
+      - 9100:9100
+
+  loki:
+    image: 982942821915.dkr.ecr.ap-southeast-1.amazonaws.com/loki:3.1.1
+    container_name: loki
+    command: -config.file=/etc/loki/loki.yml
+    user: root
+    restart: always
+    environment:
+      - TZ=Asia/Bangkok
+    volumes:
+      - ./loki-data:/loki
+      - ./config/loki.yml:/etc/loki/loki.yml
+    ports:
+      - 3100:3100
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+
+  fluentbit:
+    image: 982942821915.dkr.ecr.ap-southeast-1.amazonaws.com/fluent-bit:3.1.1
+    container_name: fluentbit
+    restart: always
+    environment:
+      - TZ=Asia/Bangkok
+      - LOKI_URL=http://loki:3100/loki/api/v1/push
+    ports:
+      - 5170:5170
+      - 5171:5171
+      - 5172:5172
+    volumes:
+      - ./config/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
+
+  tempo:
+    image: 982942821915.dkr.ecr.ap-southeast-1.amazonaws.com/tempo:2.6.0
+    container_name: tempo
+    restart: always
+    environment:
+      - TZ=Asia/Bangkok
+    volumes:
+      - ./config/tempo.yml:/etc/tempo.yml
+      - ./tempo-data:/tmp/tempo  # mkdir -p tempo-data && chown -R 10001:10001 tempo-data
+    ports:
+      - "14268:14268"  # jaeger ingest
+      - "3200:3200"   # tempo
+      - "9095:9095" # tempo grpc
+      - "4317:4317"  # otlp grpc
+      - "4318:4318"  # otlp http
+      - "9411:9411"   # zipkin
+    command: [ "-config.file=/etc/tempo.yml" ]
+
+  uptime:
+    image: 982942821915.dkr.ecr.ap-southeast-1.amazonaws.com/uptime-kuma:1
+    container_name: uptime
+    restart: always
+    environment:
+      - TZ=Asia/Bangkok
+    volumes:
+      - ./kuma_data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - 3001:3001
+
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter
+    restart: always
+    # network_mode: host
+    container_name: postgres-exporter
+    environment:
+      - TZ=Asia/Bangkok
+#      - DATA_SOURCE_URI=${KONG_PG_HOST:-kong-database}:${KONG_PG_PORT:-5432}/${POSTGRES_DB:-kong}?sslmode=disable
+#      - DATA_SOURCE_USER=${POSTGRES_USER:-kong}
+#      - DATA_SOURCE_PASS=${POSTGRES_PASSWORD:-kong}
+    command:
+      - --config.file=/conf/postgres_exporter.yml
+    volumes:
+      - ./config/postgres_exporter.yml:/conf/postgres_exporter.yml
+    ports:
+      - 9187:9187
