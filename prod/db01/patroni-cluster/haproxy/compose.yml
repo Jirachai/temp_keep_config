@@ -1,0 +1,9 @@
+services:
+  
+  haproxy:
+    image: haproxy:alpine
+    container_name: haproxy
+    restart: always
+    volumes:
+      - ./conf:/usr/local/etc/haproxy
+    network_mode: host

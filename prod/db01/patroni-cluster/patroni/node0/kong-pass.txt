@@ -1,0 +1,4 @@
+superuser:
+      username: kong
+      password: e66lVzWjJZxsWFP3xKZd1X1eazKzA0tM
+
