@@ -1,0 +1,18 @@
+services:
+  patroni:
+    build: .
+    network_mode: host
+    container_name: patroni
+    user: postgres
+    environment:
+      - TZ="Asia/Bangkok"
+      - PATRONI_NAME=member_1
+      - PATRONI_POSTGRESQL_DATA_DIR=/var/lib/patroni/data/node
+    volumes:
+      - ./pg_data:/var/lib/patroni
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kong -h 10.141.1.226"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
