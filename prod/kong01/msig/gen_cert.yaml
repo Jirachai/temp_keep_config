@@ -1,0 +1,10 @@
+services:
+  certs:
+    hostname: certs
+    container_name: certs
+    image: kong/kong-gateway:${KONG_GW_VERSION:-3.9}
+    user: "${KONG_USER:-root}"
+    restart: "no"
+    command: "kong hybrid gen_cert /usr/local/kong/certs/cluster.crt /usr/local/kong/certs/cluster.key"
+    volumes:
+      - ${PWD}/certs:/usr/local/kong/certs

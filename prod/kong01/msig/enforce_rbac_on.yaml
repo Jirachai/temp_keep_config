@@ -1,0 +1,56 @@
+services:
+  kong-migrations-bootstrap:
+    image: kong/kong-gateway:${KONG_GW_VERSION:-3.9}
+    network_mode: host
+    container_name: kong-migrations-bootstrap
+    command: kong migrations bootstrap --vv
+    restart: on-failure
+    environment:
+      KONG_DATABASE: ${KONG_DATABASE:-postgres}
+      KONG_ENFORCE_RBAC: "on"
+      KONG_PG_HOST: "127.0.0.1"
+      KONG_PG_PORT: "5432"
+      KONG_PG_DATABASE: ${KONG_PG_DATABASE:-kong}
+      KONG_PG_USER: ${KONG_PG_USER:-kong}
+      KONG_PG_PASSWORD: ${KONG_PG_PASSWORD:-e66lVzWjJZxsWFP3xKZd1X1eazKzA0tM}
+      KONG_PASSWORD: ${KONG_PASSWORD:-kong}
+      KONG_LOG_LEVEL: "warn"
+  kong-migrations-up:
+    image: kong/kong-gateway:${KONG_GW_VERSION:-3.9}
+    network_mode: host
+    container_name: kong-migrations-up
+    depends_on:
+      kong-migrations-bootstrap:
+        condition: service_completed_successfully
+    command: kong migrations up --vv
+    restart: on-failure
+    environment:
+      KONG_DATABASE: ${KONG_DATABASE:-postgres}
+      KONG_ENFORCE_RBAC: "on"
+      KONG_PG_HOST: "127.0.0.1"
+      KONG_PG_PORT: "5432"
+      KONG_PG_DATABASE: ${KONG_PG_DATABASE:-kong}
+      KONG_PG_USER: ${KONG_PG_USER:-kong}
+      KONG_PG_PASSWORD: ${KONG_PG_PASSWORD:-e66lVzWjJZxsWFP3xKZd1X1eazKzA0tM}
+      KONG_PASSWORD: ${KONG_PASSWORD:-kong}
+      KONG_LOG_LEVEL: "warn"
+  kong-migrations-finish:
+    image: kong/kong-gateway:${KONG_GW_VERSION:-3.9}
+    network_mode: host
+    container_name: kong-migrations-finish
+    depends_on:
+      kong-migrations-up:
+        condition: service_completed_successfully
+    command: kong migrations finish --vv
+    restart: on-failure
+    environment:
+      KONG_DATABASE: ${KONG_DATABASE:-postgres}
+      KONG_ENFORCE_RBAC: "on"
+      KONG_PG_HOST: "127.0.0.1"
+      KONG_PG_PORT: "5432"
+      KONG_PG_DATABASE: ${KONG_PG_DATABASE:-kong}
+      KONG_PG_USER: ${KONG_PG_USER:-kong}
+      KONG_PG_PASSWORD: ${KONG_PG_PASSWORD:-e66lVzWjJZxsWFP3xKZd1X1eazKzA0tM}
+      KONG_PASSWORD: ${KONG_PASSWORD:-kong}
+      KONG_LOG_LEVEL: "warn"
+  
