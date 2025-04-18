@@ -1,0 +1,10 @@
+auth_modules:
+  kong: # Set this to any name you want
+    type: userpass
+    userpass:
+      username: kong
+      password: e66lVzWjJZxsWFP3xKZd1X1eazKzA0tM
+    options:
+      # options become key=value parameters of the DSN
+      sslmode: disable
+      database: kong
